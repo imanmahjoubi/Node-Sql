@@ -17,7 +17,7 @@ var connection = mysql.createConnection({
 });
 
 var products_list = [];
-console.log('hellow');
+console.log('WELCOME TO YOUR FAVORITE SHOPPING APP');
 
 function readProducts() {
     console.log('Here all the products we have');
@@ -48,7 +48,6 @@ function order_select() {
 }
 
 function runQte (product){
-   console.log('product chosen '+product);
     inquirer
         .prompt({
             name: "qte",
@@ -62,29 +61,37 @@ function runQte (product){
 };
 function verify (item, quantity){
     var new_qte = 0;
-    var query = 'SELECT stock_qte FROM products WHERE item_id = "'+item+'"' ;
+    var query = 'SELECT stock_qte, price, product_name FROM products WHERE item_id = "'+item+'"' ;
     connection.query(query, function(err, res) {
-        console.log('verifying qte',res.stock_qte);
+        console.log('verifying the quantity ........');
         if (err) throw err;
-        if(parseInt(res[0].stock_qte) > parseInt(quantity)){
+        if(parseInt(res[0].stock_qte) >= parseInt(quantity)){
             console.log('Thank you for shopping');
             new_qte = parseInt(res[0].stock_qte) - parseInt(quantity);
-            console.log('New quantity',new_qte);
-            purchaseProduct(item,new_qte);
+            console.log('You Total would be '+parseFloat(res[0].price) * parseFloat(quantity) +'$');
+            purchaseProduct(item,new_qte, res[0].product_name);
         }else {
-            console.log('we only have '+res[0].stock_qte+ ' left!');
+            if(parseInt(res[0].stock_qte) === 0){
+                console.log('Sorry the product is sold out :( ');
+
+            }else {
+                console.log('Sorry we only have '+res[0].stock_qte+ ' left!');
+
+
+            }
+
             inquirer
                 .prompt([
-                    // Here we create a basic text prompt.
                     {
                         type: "confirm",
-                        message: "You would like to continue shopping?",
+                        message: "You would like to purchase all the items left?",
                         name: "confirm",
                         default: true
                     }
                 ]).then(function (response) {
                 if (response.confirm) {
-                    readProducts();
+                    console.log('You Total would be '+parseFloat(res[0].price) * parseFloat(quantity) +'$');
+                    purchaseProduct(item, 0, res[0].product_name);
                 } else {
                     connection.end();
                 }
@@ -94,32 +101,36 @@ function verify (item, quantity){
 
     });
 }
-function purchaseProduct (p , q){
-    console.log('purchasing...');
+function purchaseProduct (p , q, name){
     var sql = 'UPDATE products SET stock_qte = "'+q+'" WHERE item_id = "'+p+'"';
     connection.query(sql, function(err, res) {
         if (err) throw err;
-        console.log("Thank you for shopping with us :') ");
-
+        console.log('Thank you for purchasing '+ name + ' with us');
+        askAgain();
     });
+
+
+};
+function askAgain (){
     inquirer
         .prompt([
-            // Here we create a basic text prompt.
             {
                 type: "confirm",
                 message: "You would like to continue shopping?",
                 name: "confirm",
                 default: true
             }
-            ]).then(function (response) {
+        ]).then(function (response) {
         if (response.confirm) {
             readProducts();
         } else {
+            setTimeout(function () {
+                console.log("Thank you for shopping with us :') ");
+            }, 3000);
             connection.end();
         }
 
     });
+}
 
-
-            }
 readProducts();
